@@ -3,6 +3,7 @@
 
 @section('elastic.content')
 
-    <h2>Content goes here</h2>
+    <h2>Search Index Page</h2>
+    <elastic-search></elastic-search>
 
 @endsection
