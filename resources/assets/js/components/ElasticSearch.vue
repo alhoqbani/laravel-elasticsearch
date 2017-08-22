@@ -9,9 +9,24 @@
 </template>
 
 <script>
+    import es from 'elasticsearch';
+
     export default {
         mounted() {
-            console.log('Component mounted.')
+            let client = new es.Client({
+                host: 'localhost:9200',
+                log: 'trace'
+            });
+            client.ping({
+                requestTimeout: 30000,
+            }, function (error) {
+                if (error) {
+                    console.error('elasticsearch cluster is down!');
+                } else {
+                    console.log('All is well');
+                }
+            });
+            console.log('ElasticSearch Component mounted.')
         }
     }
 </script>
