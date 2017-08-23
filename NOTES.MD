@@ -16,4 +16,16 @@ http.cors.allow-headers : X-Requested-With,X-Auth-Token,Content-Type, Content-Le
 #http.cors.allow-origin : /https?:\/\/laravel-elasticsearch.app(:[0-9]+)?/
 
 ```
+
+## Plugins:
+Install plugin:
+`sudo bin/elasticsearch-plugin install analysis-icu`
+
+If you rely on some plugins,
+you can define mandatory plugins by adding plugin.mandatory setting
+to the `config/elasticsearch.yml`
+
+```yml
+plugin.mandatory: analysis-icu
+```
  
