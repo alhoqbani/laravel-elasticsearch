@@ -5,6 +5,7 @@ namespace App\Console\Commands;
 use App\Models\Post;
 use Elasticsearch\ClientBuilder;
 use Elasticsearch\Common\Exceptions\BadRequest400Exception;
+use Elasticsearch\Common\Exceptions\Missing404Exception;
 use Illuminate\Console\Command;
 
 class ElasticIndexPostsCommand extends Command
@@ -22,7 +23,11 @@ class ElasticIndexPostsCommand extends Command
      * @var string
      */
     protected $description = 'Command description';
-
+    /**
+     * @var \Elasticsearch\Client
+     */
+    protected $client;
+    
     /**
      * Create a new command instance.
      *
@@ -30,6 +35,13 @@ class ElasticIndexPostsCommand extends Command
      */
     public function __construct()
     {
+        $hosts = [
+            '46.101.52.160:9200',         // IP + Port
+        ];
+        $this->client = ClientBuilder::create()           // Instantiate a new ClientBuilder
+        ->setHosts($hosts)      // Set the hosts
+        ->build();              // Build the client object
+    
         parent::__construct();
     }
 
@@ -40,10 +52,9 @@ class ElasticIndexPostsCommand extends Command
      */
     public function handle()
     {
-        $this->deleteIndex();
+//        $this->deleteIndex();
         $this->createIndex();
     
-        $client = ClientBuilder::create()->build();
         $posts = Post::with(['author.city'])->get();
 
         $params = [];
@@ -59,7 +70,7 @@ class ElasticIndexPostsCommand extends Command
             $params['body'][] = $post->toArray();
         }
         
-        $responses = $client->bulk($params);
+        $responses = $this->client->bulk($params);
         \Log::info($responses);
         if ($responses['errors'] == 'true') {
             $this->error("Error!! Check log file");
@@ -70,7 +81,6 @@ class ElasticIndexPostsCommand extends Command
     
     private function createIndex()
     {
-        $client = ClientBuilder::create()->build();
         $params = [
             'index' => 'post_index',
             'body' => [
@@ -95,7 +105,7 @@ class ElasticIndexPostsCommand extends Command
         ];
         
         try {
-            $client->indices()->create($params);
+            $this->client->indices()->create($params);
             $this->info("Index Created");
         } catch (BadRequest400Exception $e) {
             dump(json_decode($e->getMessage()));
@@ -104,10 +114,13 @@ class ElasticIndexPostsCommand extends Command
     
     private function deleteIndex()
     {
-        $client = ClientBuilder::create()->build();
         $params = ['index' => 'post_index'];
-        $client->indices()->delete($params);
-        $this->warn("Index deleted");
+        try {
+            $this->client->indices()->delete($params);
+            $this->warn("Index deleted");
+        } catch (Missing404Exception $e) {
+            dump(json_decode($e->getMessage()));
+        }
     }
     
 }
